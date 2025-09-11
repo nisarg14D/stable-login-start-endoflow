@@ -1,4 +1,3 @@
-// in src/lib/db/queries.ts
 import 'server-only';
 import { eq } from 'drizzle-orm';
 import { db } from './drizzle';
@@ -7,19 +6,18 @@ import { cookies } from 'next/headers';
 import { decrypt } from '@/lib/auth/session';
 
 export async function getUser(): Promise<User | null> {
-  const cookie = (await cookies()).get('session')?.value;
-  const session = await decrypt(cookie);
-  
-  // CORRECTED: Safely check if session and session.user exist
-  if (!session?.user) {
+  const sessionCookie = (await cookies()).get('session')?.value;
+  const session = await decrypt(sessionCookie);
+  if (!session || typeof session !== 'object' || !('user' in session)) {
     return null;
   }
 
-  const [user] = await db
+  const user = session.user as User;
+  const [dbUser] = await db
     .select()
     .from(users)
-    .where(eq(users.id, session.user.id)) // Now this is safe
+    .where(eq(users.id, user.id))
     .limit(1);
 
-  return user || null;
+  return dbUser || null;
 }

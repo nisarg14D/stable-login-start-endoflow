@@ -1,66 +1,134 @@
-// in src/components/ui/login-form.tsx
-'use client';
+"use client"
 
-// CHANGE 1: We now import 'useActionState' directly from React
-import { useActionState } from 'react'; 
-import { useFormStatus } from 'react-dom';
-import { signIn } from '@/app/(login)/actions';
-import Link from 'next/link';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import type React from "react"
 
-export function LoginForm() {
-  // CHANGE 2: We call the hook with its new, official name 'useActionState'
-  const [state, formAction] = useActionState(signIn, undefined);
+import { useState } from "react"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 
-  return (
-    <Card className="mx-auto max-w-sm">
-      <CardHeader>
-        <CardTitle className="text-2xl">Login to ENDOFLOW</CardTitle>
-        <CardDescription>
-          Enter your email below to login to your account
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <form action={formAction} className="grid gap-4">
-          <div className="grid gap-2">
-            <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
-              type="email"
-              name="email" // 'name' is required for server actions
-              placeholder="you@example.com"
-              required
-            />
-          </div>
-          <div className="grid gap-2">
-            <div className="flex items-center">
-              <Label htmlFor="password">Password</Label>
-              <Link href="#" className="ml-auto inline-block text-sm underline">
-                Forgot your password?
-              </Link>
-            </div>
-            <Input id="password" type="password" name="password" required />
-          </div>
-          {/* This will display any error messages from the server */}
-          {state?.error && (
-            <p className="text-sm text-destructive">{state.error}</p>
-          )}
-          <SubmitButton />
-        </form>
-      </CardContent>
-    </Card>
-  );
+interface LoginFormProps {
+  onLogin?: (email: string, password: string) => Promise<void>
+  isLoading?: boolean
+  error?: string
+  onForgotPassword?: () => void
 }
 
-// A helper component to show a "loading" state on the button during login
-function SubmitButton() {
-  const { pending } = useFormStatus();
+export function LoginForm({ onLogin, isLoading = false, error, onForgotPassword }: LoginFormProps) {
+  const [email, setEmail] = useState("")
+  const [password, setPassword] = useState("")
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (onLogin && email && password) {
+      await onLogin(email, password)
+    }
+  }
+
   return (
-    <Button type="submit" className="w-full" disabled={pending}>
-      {pending ? 'Signing In...' : 'Sign In'}
-    </Button>
-  );
+    <Card className="w-full max-w-md mx-auto shadow-lg border-0 bg-card">
+      <CardHeader className="space-y-4 text-center pb-6">
+        <div className="flex items-center justify-center space-x-2">
+          <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+            <div className="w-4 h-4 bg-white rounded-sm"></div>
+          </div>
+          <CardTitle className="text-2xl font-bold text-primary">ENDOFLOW</CardTitle>
+        </div>
+        <CardDescription className="text-base text-muted-foreground">Clinic Portal</CardDescription>
+      </CardHeader>
+
+      <CardContent className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="email" className="text-sm font-medium text-foreground">
+              Email
+            </Label>
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground text-sm">
+                @
+              </span>
+              <Input
+                id="email"
+                type="email"
+                placeholder="Enter your email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="pl-10 h-11 bg-background border-input"
+                required
+                disabled={isLoading}
+              />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="password" className="text-sm font-medium text-foreground">
+              Password
+            </Label>
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground text-sm">
+                🔒
+              </span>
+              <Input
+                id="password"
+                type="password"
+                placeholder="Enter your password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="pl-10 h-11 bg-background border-input"
+                required
+                disabled={isLoading}
+              />
+            </div>
+          </div>
+
+          {error && (
+            <div className="p-3 text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-md">
+              {error}
+            </div>
+          )}
+
+          <button
+            type="submit"
+            className="w-full h-11 font-medium rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            style={{
+              backgroundColor: "#009688",
+              color: "white",
+              border: "none",
+            }}
+            onMouseEnter={(e) => {
+              if (!isLoading && email && password) {
+                e.currentTarget.style.backgroundColor = "#00796b"
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (!isLoading && email && password) {
+                e.currentTarget.style.backgroundColor = "#009688"
+              }
+            }}
+            disabled={isLoading || !email || !password}
+          >
+            {isLoading ? (
+              <>
+                <span className="mr-2">⏳</span>
+                Signing in...
+              </>
+            ) : (
+              "Login"
+            )}
+          </button>
+        </form>
+
+        <div className="text-center">
+          <button
+            type="button"
+            onClick={onForgotPassword}
+            className="text-sm text-primary hover:text-primary/80 font-medium transition-colors"
+            disabled={isLoading}
+          >
+            Forgot Password?
+          </button>
+        </div>
+      </CardContent>
+    </Card>
+  )
 }

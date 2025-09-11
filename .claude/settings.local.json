@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx tsc:*)",
+      "Bash(npx drizzle-kit generate:pg:*)",
+      "Bash(npx drizzle-kit migrate:pg:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

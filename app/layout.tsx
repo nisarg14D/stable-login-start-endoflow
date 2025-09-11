@@ -5,8 +5,8 @@ import { getUser } from '@/lib/db/queries';
 import { SWRConfig } from 'swr';
 
 export const metadata: Metadata = {
-  title: 'Next.js SaaS Starter',
-  description: 'Get started quickly with Next.js, Postgres, and Stripe.'
+  title: 'ENDOFLOW - Dental Clinic Management',
+  description: 'Advanced dental clinic management system for endodontic practices.'
 };
 
 export const viewport: Viewport = {
@@ -21,11 +21,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html
-      lang="en"
-      className={`bg-white dark:bg-gray-950 text-black dark:text-white ${manrope.className}`}
-    >
-      <body className="min-h-[100dvh] bg-gray-50">
+    <html lang="en" suppressHydrationWarning>
+      <body className={manrope.className}>
         <SWRConfig
           value={{
             fallback: {

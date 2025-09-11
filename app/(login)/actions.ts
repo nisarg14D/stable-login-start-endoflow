@@ -6,62 +6,55 @@ import { db } from '@/lib/db/drizzle';
 import { users } from '@/lib/db/schema';
 import { comparePasswords, setSession } from '@/lib/auth/session';
 import { redirect } from 'next/navigation';
-import { cookies } from 'next/headers';
+import { validatedAction } from '@/lib/auth/validation';
 
-// Define the shape of the data for the login form
 const signInSchema = z.object({
-  email: z.string().email(),
-  password: z.string().min(8),
+  email: z.string().email().min(3).max(255),
+  password: z.string().min(8).max(100)
 });
 
-export async function signIn(prevState: any, formData: FormData) {
-  // 1. Get the data from the form
-  const data = Object.fromEntries(formData);
-  const parsed = signInSchema.safeParse(data);
+export const signIn = validatedAction(signInSchema, async (data) => {
+  const { email, password } = data;
 
-  // 2. Validate the data
-  if (!parsed.success) {
-    return { error: 'Invalid form data. Please check your inputs.' };
-  }
-  const { email, password } = parsed.data;
-
-  // 3. Find the user in the database
   const [foundUser] = await db
     .select()
     .from(users)
     .where(eq(users.email, email))
     .limit(1);
-    
+
   if (!foundUser || !foundUser.passwordHash) {
     return { error: 'Invalid email or password.' };
   }
 
-  // 4. Check if the password is correct
-  const isPasswordValid = await comparePasswords(password, foundUser.passwordHash);
+  const isPasswordValid = await comparePasswords(
+    password,
+    foundUser.passwordHash
+  );
+
   if (!isPasswordValid) {
     return { error: 'Invalid email or password.' };
   }
 
-  // 5. If everything is correct, create a session cookie
   await setSession(foundUser);
 
-  // 6. Redirect the user to the correct dashboard based on their role
+  // --- Role--Based Redirection for ENDOFLOW ---
   switch (foundUser.role) {
     case 'dentist':
-      return redirect('/dentist/dashboard');
+      redirect('/dentist/dashboard');
+      break;
     case 'assistant':
-      return redirect('/assistant/dashboard');
+      redirect('/assistant/dashboard');
+      break;
     case 'patient':
-      return redirect('/patient/home');
+      redirect('/patient/home');
+      break;
     default:
-      return redirect('/login');
+      redirect('/login');
   }
-}
+});
 
-// --- Sign-Out Logic for ENDOFLOW ---
 export async function signOut() {
-  // 1. Delete the session cookie
-  (await cookies()).delete('session');
-  // 2. Redirect the user to the main page
-  redirect('/');
+  const { destroySession } = await import('@/lib/auth/session');
+  await destroySession();
+  redirect('/login');
 }

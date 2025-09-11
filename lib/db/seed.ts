@@ -1,76 +1,120 @@
-import { stripe } from '../payments/stripe';
+import { config } from 'dotenv';
+config({ path: '.env.local' });
+
 import { db } from './drizzle';
-import { users, teams, teamMembers } from './schema';
-import { hashPassword } from '@/lib/auth/session';
+import { 
+  users, 
+  patients, 
+  dentists, 
+  assistants, 
+  diagnosis_options, 
+  treatment_options 
+} from './schema';
+import * as bcrypt from 'bcryptjs';
+import { randomUUID } from 'crypto';
 
-async function createStripeProducts() {
-  console.log('Creating Stripe products and prices...');
+async function createDiagnosisOptions() {
+  console.log('Creating diagnosis options...');
+  
+  const diagnosisData = [
+    { name: 'Symptomatic Irreversible Pulpitis', category: 'Pulpal' },
+    { name: 'Asymptomatic Irreversible Pulpitis', category: 'Pulpal' },
+    { name: 'Symptomatic Apical Periodontitis', category: 'Periapical' },
+    { name: 'Asymptomatic Apical Periodontitis', category: 'Periapical' },
+    { name: 'Acute Apical Abscess', category: 'Periapical' },
+    { name: 'Chronic Apical Abscess', category: 'Periapical' },
+    { name: 'Deep Caries', category: 'Coronal' },
+    { name: 'Fractured Tooth', category: 'Trauma' },
+  ];
 
-  const baseProduct = await stripe.products.create({
-    name: 'Base',
-    description: 'Base subscription plan',
-  });
+  await db.insert(diagnosis_options).values(diagnosisData);
+  console.log('Diagnosis options created successfully.');
+}
 
-  await stripe.prices.create({
-    product: baseProduct.id,
-    unit_amount: 800, // $8 in cents
-    currency: 'usd',
-    recurring: {
-      interval: 'month',
-      trial_period_days: 7,
-    },
-  });
+async function createTreatmentOptions() {
+  console.log('Creating treatment options...');
+  
+  const treatmentData = [
+    { name: 'Single Visit RCT', category: 'Endodontic' },
+    { name: 'Multiple Visit RCT', category: 'Endodontic' },
+    { name: 'Pulpotomy', category: 'Endodontic' },
+    { name: 'Apicoectomy', category: 'Surgical' },
+    { name: 'Extraction', category: 'Surgical' },
+    { name: 'Composite Restoration', category: 'Restorative' },
+    { name: 'Crown Preparation', category: 'Restorative' },
+    { name: 'Observation', category: 'Conservative' },
+  ];
 
-  const plusProduct = await stripe.products.create({
-    name: 'Plus',
-    description: 'Plus subscription plan',
-  });
-
-  await stripe.prices.create({
-    product: plusProduct.id,
-    unit_amount: 1200, // $12 in cents
-    currency: 'usd',
-    recurring: {
-      interval: 'month',
-      trial_period_days: 7,
-    },
-  });
-
-  console.log('Stripe products and prices created successfully.');
+  await db.insert(treatment_options).values(treatmentData);
+  console.log('Treatment options created successfully.');
 }
 
 async function seed() {
-  const email = 'test@test.com';
-  const password = 'admin123';
-  const passwordHash = await hashPassword(password);
+  console.log('🦷 Seeding ENDOFLOW database...');
+  console.log('Database URL:', process.env.POSTGRES_URL?.substring(0, 50) + '...');
 
-  const [user] = await db
+  // Create test users with different roles
+  const password = 'password123';
+  const passwordHash = await bcrypt.hash(password, 12);
+
+  // Create dentist user
+  const [dentistUser] = await db
     .insert(users)
-    .values([
-      {
-        email: email,
-        passwordHash: passwordHash,
-        role: "owner",
-      },
-    ])
-    .returning();
-
-  console.log('Initial user created.');
-
-  const [team] = await db
-    .insert(teams)
     .values({
-      name: 'Test Team',
+      id: randomUUID(),
+      email: 'dentist@endoflow.com',
+      passwordHash: passwordHash,
+      role: 'dentist',
     })
     .returning();
 
-  await db.insert(teamMembers).values({
-    teamId: team.id,
-    userId: user.id,
-    role: 'owner',
+  await db.insert(dentists).values({
+    id: dentistUser.id,
+    fullName: 'Dr. Sarah Johnson',
+    specialty: 'Endodontist',
   });
 
-  await createStripeProducts();
+  // Create assistant user  
+  const [assistantUser] = await db
+    .insert(users)
+    .values({
+      id: randomUUID(),
+      email: 'assistant@endoflow.com',
+      passwordHash: passwordHash,
+      role: 'assistant',
+    })
+    .returning();
+
+  await db.insert(assistants).values({
+    id: assistantUser.id,
+    fullName: 'Lisa Martinez',
+  });
+
+  // Create patient user
+  const [patientUser] = await db
+    .insert(users)
+    .values({
+      id: randomUUID(),
+      email: 'patient@endoflow.com',
+      passwordHash: passwordHash,
+      role: 'patient',
+    })
+    .returning();
+
+  await db.insert(patients).values({
+    id: patientUser.id,
+    uhid: 'ENDO-001',
+    firstName: 'John',
+    lastName: 'Smith',
+  });
+
+  console.log('Test users created:');
+  console.log('- Dentist: dentist@endoflow.com / password123');
+  console.log('- Assistant: assistant@endoflow.com / password123');
+  console.log('- Patient: patient@endoflow.com / password123');
+
+  await createDiagnosisOptions();
+  await createTreatmentOptions();
 }
 
 seed()

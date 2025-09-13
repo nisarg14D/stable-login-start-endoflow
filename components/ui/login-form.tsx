@@ -1,7 +1,6 @@
 "use client"
 
 import type React from "react"
-
 import { useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -89,22 +88,7 @@ export function LoginForm({ onLogin, isLoading = false, error, onForgotPassword 
 
           <button
             type="submit"
-            className="w-full h-11 font-medium rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            style={{
-              backgroundColor: "#009688",
-              color: "white",
-              border: "none",
-            }}
-            onMouseEnter={(e) => {
-              if (!isLoading && email && password) {
-                e.currentTarget.style.backgroundColor = "#00796b"
-              }
-            }}
-            onMouseLeave={(e) => {
-              if (!isLoading && email && password) {
-                e.currentTarget.style.backgroundColor = "#009688"
-              }
-            }}
+            className="w-full h-11 font-medium rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-[#009688] hover:bg-[#00796b] text-white border-none"
             disabled={isLoading || !email || !password}
           >
             {isLoading ? (

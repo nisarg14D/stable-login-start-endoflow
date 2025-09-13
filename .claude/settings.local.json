@@ -3,7 +3,22 @@
     "allow": [
       "Bash(npx tsc:*)",
       "Bash(npx drizzle-kit generate:pg:*)",
-      "Bash(npx drizzle-kit migrate:pg:*)"
+      "Bash(npx drizzle-kit migrate:pg:*)",
+      "Bash(mkdir:*)",
+      "Bash(find:*)",
+      "Bash(ls:*)",
+      "Bash(npm run dev:*)",
+      "Bash(xargs ls:*)",
+      "Bash(tree:*)",
+      "Bash(cat:*)",
+      "Bash(npm run:*)",
+      "Bash(docker:*)",
+      "Bash(npm install:*)",
+      "Bash(npx drizzle-kit generate:*)",
+      "Bash(npx tsx:*)",
+      "Bash(npx next:*)",
+      "Bash(pkill:*)",
+      "Bash(git add:*)"
     ],
     "deny": [],
     "ask": []

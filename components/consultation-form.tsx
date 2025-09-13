@@ -10,6 +10,10 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Mic, Save, Send, Search, User, MapPin, Activity, MicOff } from "lucide-react"
+import { InteractiveDentalChart } from "@/components/interactive-dental-chart"
+import { PrescriptionManager } from "@/components/prescription-manager"
+import { FollowUpManager } from "@/components/follow-up-manager"
+import { patientStore, type ConsultationData } from "@/lib/store/patient-store"
 
 interface Patient {
   id: string
@@ -109,6 +113,9 @@ export function ConsultationForm() {
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null)
   const [showSearchResults, setShowSearchResults] = useState(false)
   const [isRecording, setIsRecording] = useState(false)
+  const [prescriptions, setPrescriptions] = useState<any[]>([])
+  const [followUpPlans, setFollowUpPlans] = useState<any[]>([])
+  const [consultationId, setConsultationId] = useState<string | null>(null)
   const [formData, setFormData] = useState<FormData>({
     chiefComplaint: "",
     medicalHistory: {
@@ -137,6 +144,175 @@ export function ConsultationForm() {
       other: "",
     },
   })
+
+  // Save functions
+  const handleSaveDraft = () => {
+    if (!selectedPatient) return
+
+    try {
+      const consultationData = {
+        patientId: selectedPatient.id,
+        chiefComplaint: formData.chiefComplaint,
+        medicalHistory: {
+          allergies: formData.medicalHistory.allergies ? ["Yes"] : [],
+          medications: formData.medicalHistory.medications ? [formData.medicalHistory.medications] : [],
+          medicalConditions: [
+            ...(formData.medicalHistory.diabetes ? ["Diabetes"] : []),
+            ...(formData.medicalHistory.hypertension ? ["Hypertension"] : []),
+            ...(formData.medicalHistory.heartDisease ? ["Heart Disease"] : [])
+          ],
+          previousDentalHistory: formData.medicalHistory.previousSurgeries
+        },
+        painAssessment: {
+          painLevel: parseInt(formData.painAssessment.intensity) || 0,
+          painType: [formData.painAssessment.character],
+          triggers: formData.painAssessment.triggers,
+          duration: formData.painAssessment.duration
+        },
+        clinicalExamination: {
+          extraoral: {
+            facialSymmetry: formData.clinicalExamination.extraOral,
+            lymphNodes: "",
+            tmj: ""
+          },
+          intraoral: {
+            oralHygiene: formData.clinicalExamination.intraOral,
+            gingiva: formData.clinicalExamination.periodontal,
+            teeth: "",
+            tongue: "",
+            palate: ""
+          }
+        },
+        investigations: {
+          radiographs: formData.investigations.radiographs,
+          vitalityTests: formData.investigations.vitalityTests ? [formData.investigations.vitalityTests] : [],
+          percussion: [],
+          palpation: []
+        },
+        diagnosis: [],
+        treatmentPlan: [],
+        prescriptions: prescriptions,
+        followUpPlan: followUpPlans.length > 0 ? followUpPlans[0] : null,
+        notes: "",
+        dentistName: "Dr. Sarah Wilson",
+        status: 'draft' as const
+      }
+
+      const savedConsultation = patientStore.saveConsultation(consultationData)
+      setConsultationId(savedConsultation.id)
+      
+      alert("Draft saved successfully!")
+    } catch (error) {
+      console.error("Error saving draft:", error)
+      alert("Error saving draft. Please try again.")
+    }
+  }
+
+  const handleCompleteConsultation = () => {
+    if (!selectedPatient) return
+
+    try {
+      const consultationData = {
+        patientId: selectedPatient.id,
+        chiefComplaint: formData.chiefComplaint,
+        medicalHistory: {
+          allergies: formData.medicalHistory.allergies ? ["Yes"] : [],
+          medications: formData.medicalHistory.medications ? [formData.medicalHistory.medications] : [],
+          medicalConditions: [
+            ...(formData.medicalHistory.diabetes ? ["Diabetes"] : []),
+            ...(formData.medicalHistory.hypertension ? ["Hypertension"] : []),
+            ...(formData.medicalHistory.heartDisease ? ["Heart Disease"] : [])
+          ],
+          previousDentalHistory: formData.medicalHistory.previousSurgeries
+        },
+        painAssessment: {
+          painLevel: parseInt(formData.painAssessment.intensity) || 0,
+          painType: [formData.painAssessment.character],
+          triggers: formData.painAssessment.triggers,
+          duration: formData.painAssessment.duration
+        },
+        clinicalExamination: {
+          extraoral: {
+            facialSymmetry: formData.clinicalExamination.extraOral,
+            lymphNodes: "",
+            tmj: ""
+          },
+          intraoral: {
+            oralHygiene: formData.clinicalExamination.intraOral,
+            gingiva: formData.clinicalExamination.periodontal,
+            teeth: "",
+            tongue: "",
+            palate: ""
+          }
+        },
+        investigations: {
+          radiographs: formData.investigations.radiographs,
+          vitalityTests: formData.investigations.vitalityTests ? [formData.investigations.vitalityTests] : [],
+          percussion: [],
+          palpation: []
+        },
+        diagnosis: [],
+        treatmentPlan: [],
+        prescriptions: prescriptions,
+        followUpPlan: followUpPlans.length > 0 ? followUpPlans[0] : null,
+        notes: "",
+        dentistName: "Dr. Sarah Wilson",
+        status: 'completed' as const
+      }
+
+      const savedConsultation = patientStore.saveConsultation(consultationData)
+      
+      // Save prescriptions separately
+      prescriptions.forEach(prescription => {
+        patientStore.savePrescription(selectedPatient.id, prescription)
+      })
+      
+      // Save follow-up plans separately  
+      followUpPlans.forEach(plan => {
+        patientStore.saveFollowUpPlan(selectedPatient.id, plan)
+      })
+
+      alert("Consultation completed and saved successfully!")
+      
+      // Reset form
+      setSelectedPatient(null)
+      setFormData({
+        chiefComplaint: "",
+        medicalHistory: {
+          diabetes: false,
+          hypertension: false,
+          heartDisease: false,
+          allergies: false,
+          medications: "",
+          previousSurgeries: "",
+        },
+        painAssessment: {
+          intensity: "",
+          character: "",
+          duration: "",
+          triggers: [],
+        },
+        clinicalExamination: {
+          extraOral: "",
+          intraOral: "",
+          periodontal: "",
+          occlusion: "",
+        },
+        investigations: {
+          radiographs: [],
+          vitalityTests: "",
+          other: "",
+        },
+      })
+      setPrescriptions([])
+      setFollowUpPlans([])
+      setConsultationId(null)
+      
+    } catch (error) {
+      console.error("Error completing consultation:", error)
+      alert("Error completing consultation. Please try again.")
+    }
+  }
 
   const filteredPatients = mockPatients.filter(
     (patient) =>
@@ -687,16 +863,84 @@ export function ConsultationForm() {
                       </div>
                     </AccordionContent>
                   </AccordionItem>
+
+                  <AccordionItem value="diagnosis-treatment" className="border rounded-lg px-4">
+                    <AccordionTrigger className="text-lg font-medium text-primary hover:no-underline">
+                      Diagnosis & Treatment Planning
+                    </AccordionTrigger>
+                    <AccordionContent className="space-y-6 pt-4">
+                      <div className="space-y-4">
+                        <div className="text-sm text-muted-foreground">
+                          <p>
+                            Click on individual teeth to add diagnoses and treatment notes. The AI Co-Pilot will provide
+                            evidence-based treatment suggestions.
+                          </p>
+                        </div>
+                        <InteractiveDentalChart />
+                      </div>
+                    </AccordionContent>
+                  </AccordionItem>
+
+                  <AccordionItem value="prescription" className="border rounded-lg px-4">
+                    <AccordionTrigger className="text-lg font-medium text-primary hover:no-underline">
+                      Prescription Management
+                    </AccordionTrigger>
+                    <AccordionContent className="space-y-6 pt-4">
+                      <div className="space-y-4">
+                        <div className="text-sm text-muted-foreground">
+                          <p>
+                            Create digital prescriptions with medicine database integration, dosage instructions, and drug interaction warnings.
+                          </p>
+                        </div>
+                        {selectedPatient && (
+                          <PrescriptionManager
+                            patientId={selectedPatient.id}
+                            patientName={selectedPatient.name}
+                            onSave={(prescription) => {
+                              setPrescriptions(prev => [...prev, prescription])
+                              console.log("Prescription saved in consultation:", prescription)
+                            }}
+                          />
+                        )}
+                      </div>
+                    </AccordionContent>
+                  </AccordionItem>
+
+                  <AccordionItem value="follow-up" className="border rounded-lg px-4">
+                    <AccordionTrigger className="text-lg font-medium text-primary hover:no-underline">
+                      Follow-up Care Plan
+                    </AccordionTrigger>
+                    <AccordionContent className="space-y-6 pt-4">
+                      <div className="space-y-4">
+                        <div className="text-sm text-muted-foreground">
+                          <p>
+                            Schedule follow-up appointments, reminders, and track treatment progress with automated care workflows.
+                          </p>
+                        </div>
+                        {selectedPatient && (
+                          <FollowUpManager
+                            patientId={selectedPatient.id}
+                            patientName={selectedPatient.name}
+                            treatmentType="General Consultation"
+                            onSave={(followUpPlan) => {
+                              setFollowUpPlans(prev => [...prev, followUpPlan])
+                              console.log("Follow-up plan saved in consultation:", followUpPlan)
+                            }}
+                          />
+                        )}
+                      </div>
+                    </AccordionContent>
+                  </AccordionItem>
                 </Accordion>
               </CardContent>
             </Card>
 
             <div className="mt-8 flex justify-end gap-4 pb-6">
-              <Button variant="outline" size="lg">
+              <Button variant="outline" size="lg" onClick={handleSaveDraft}>
                 <Save className="h-4 w-4 mr-2" />
                 Save Draft
               </Button>
-              <Button size="lg">
+              <Button size="lg" onClick={handleCompleteConsultation}>
                 <Send className="h-4 w-4 mr-2" />
                 Complete Consultation
               </Button>

@@ -21,3 +21,12 @@ export async function getUser(): Promise<User | null> {
 
   return dbUser || null;
 }
+
+export async function getTeamForUser() {
+  // For now, return mock team data
+  // This would typically fetch from a teams table
+  return {
+    name: 'ENDOFLOW Clinic',
+    members: [],
+  };
+}

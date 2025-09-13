@@ -4,6 +4,10 @@ import React, { useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { AddPatientModal } from "@/components/add-patient-modal"
 import { ConsultationForm } from "@/components/consultation-form"
+import { AppointmentOrganizer } from "@/components/appointment-organizer"
+import { PrescriptionManager } from "@/components/prescription-manager"
+import { FollowUpManager } from "@/components/follow-up-manager"
+import { patientStore, type PatientRecord, type ConsultationData } from "@/lib/store/patient-store"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { 
@@ -37,6 +41,7 @@ import {
   Microscope,
   StickyNote,
   Eye,
+  Pill,
   Banknote
 } from "lucide-react"
 
@@ -67,6 +72,8 @@ export function DentistDashboard({ dentistData, isLoading = false, error }: Dent
   const [patientSearchTerm, setPatientSearchTerm] = useState("")
   const [activePatientTab, setActivePatientTab] = useState("overview")
   const [showAddPatientModal, setShowAddPatientModal] = useState(false)
+  const [patientSidebarWidth, setPatientSidebarWidth] = useState(320)
+  const [isResizing, setIsResizing] = useState(false)
   const [newPatientForm, setNewPatientForm] = useState({
     uhid: "",
     firstName: "",
@@ -145,66 +152,33 @@ export function DentistDashboard({ dentistData, isLoading = false, error }: Dent
   ]
 
   const quickActions = [
-    { label: "Find Patient", icon: Search },
-    { label: "Schedule", icon: Calendar, primary: true },
-    { label: "Treatment Notes", icon: FileText },
-    { label: "Billing", icon: DollarSign }
-  ]
-
-  // Mock patient data
-  const mockPatients = [
-    {
-      id: 1,
-      name: "Sarah Johnson",
-      uhid: "UH001235",
-      phone: "(555) 234-5678",
-      lastVisit: "20/01/2024",
-      nextVisit: "15/02/2024 at 2:30 PM",
-      status: "active",
-      isNew: false,
-      medicalAlerts: ["Allergies: Latex"],
-      hasCriticalInfo: true
+    { 
+      label: "Find Patient", 
+      icon: Search, 
+      onClick: () => setActiveTab("patients")
     },
-    {
-      id: 2,
-      name: "Michael Brown",
-      uhid: "UH001236",
-      phone: "(555) 345-6789",
-      lastVisit: "10/12/2023",
-      nextVisit: "10/02/2024 at 2:30 PM",
-      status: "active",
-      isNew: false,
-      medicalAlerts: [],
-      hasCriticalInfo: false
+    { 
+      label: "Schedule", 
+      icon: Calendar, 
+      onClick: () => setActiveTab("appointments")
     },
-    {
-      id: 3,
-      name: "Emily Davis",
-      uhid: "UH001237",
-      phone: "(555) 456-7890",
-      lastVisit: null,
-      nextVisit: null,
-      status: "new",
-      isNew: true,
-      medicalAlerts: [],
-      hasCriticalInfo: false
+    { 
+      label: "Treatment Notes", 
+      icon: FileText, 
+      onClick: () => setActiveTab("treatment-plans")
     },
-    {
-      id: 4,
-      name: "John Smith",
-      uhid: "UH001234",
-      phone: "(555) 123-4567",
-      lastVisit: "15/01/2024",
-      nextVisit: "15/02/2024 at 2:30 PM",
-      status: "active",
-      isNew: false,
-      medicalAlerts: [],
-      hasCriticalInfo: false
+    { 
+      label: "Billing", 
+      icon: DollarSign, 
+      onClick: () => setActiveTab("billing")
     }
   ]
 
+  // Get patient data from store
+  const allPatients = patientStore.getAllPatients()
+
   // Filter patients based on search and filter
-  const filteredPatients = mockPatients.filter(patient => {
+  const filteredPatients = allPatients.filter(patient => {
     const matchesSearch = patient.name.toLowerCase().includes(patientSearchTerm.toLowerCase()) ||
                          patient.uhid.toLowerCase().includes(patientSearchTerm.toLowerCase())
     
@@ -217,10 +191,50 @@ export function DentistDashboard({ dentistData, isLoading = false, error }: Dent
     return matchesSearch && matchesFilter
   })
 
+  // Resize handlers for patient sidebar
+  const handleMouseDown = (e: React.MouseEvent) => {
+    setIsResizing(true)
+    e.preventDefault()
+  }
+
+  const handleMouseMove = (e: MouseEvent) => {
+    if (!isResizing) return
+    
+    const newWidth = e.clientX
+    const minWidth = 250
+    const maxWidth = 600
+    
+    if (newWidth >= minWidth && newWidth <= maxWidth) {
+      setPatientSidebarWidth(newWidth)
+    }
+  }
+
+  const handleMouseUp = () => {
+    setIsResizing(false)
+  }
+
+  // Add and remove mouse event listeners
+  React.useEffect(() => {
+    if (isResizing) {
+      document.addEventListener('mousemove', handleMouseMove)
+      document.addEventListener('mouseup', handleMouseUp)
+    } else {
+      document.removeEventListener('mousemove', handleMouseMove)
+      document.removeEventListener('mouseup', handleMouseUp)
+    }
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove)
+      document.removeEventListener('mouseup', handleMouseUp)
+    }
+  }, [isResizing])
+
   const patientTabsConfig = [
     { id: "overview", label: "Overview", icon: Eye },
     { id: "clinical-notes", label: "Clinical Notes", icon: StickyNote },
     { id: "dental-chart", label: "Dental Chart", icon: UserCheck },
+    { id: "prescriptions", label: "Prescriptions", icon: Pill },
+    { id: "follow-ups", label: "Follow-ups", icon: Calendar },
     { id: "image-gallery", label: "Image Gallery", icon: Camera },
     { id: "lab-rx", label: "Lab Rx", icon: Microscope },
     { id: "billing", label: "Billing", icon: Receipt }
@@ -531,8 +545,9 @@ export function DentistDashboard({ dentistData, isLoading = false, error }: Dent
                         return (
                           <Button
                             key={index}
-                            variant={action.primary ? "default" : "outline"}
-                            className={`h-20 flex flex-col gap-2 ${action.primary ? 'bg-accent hover:bg-accent/90' : ''}`}
+                            variant="outline"
+                            className="h-20 flex flex-col gap-2 hover:bg-primary hover:text-primary-foreground transition-colors"
+                            onClick={action.onClick}
                           >
                             <Icon className="w-6 h-6" />
                             <span className="text-sm">{action.label}</span>
@@ -549,7 +564,10 @@ export function DentistDashboard({ dentistData, isLoading = false, error }: Dent
             {activeTab === "patients" && (
               <div className="flex h-full">
                 {/* Left Sidebar - Patient List */}
-                <div className="w-80 border-r border-border bg-white flex flex-col">
+                <div 
+                  className="border-r border-border bg-white flex flex-col"
+                  style={{ width: `${patientSidebarWidth}px` }}
+                >
                   <div className="p-4 border-b border-border">
                     <div className="flex items-center justify-between mb-4">
                       <div>
@@ -635,6 +653,19 @@ export function DentistDashboard({ dentistData, isLoading = false, error }: Dent
                         )}
                       </div>
                     ))}
+                  </div>
+                </div>
+                
+                {/* Resize Handle */}
+                <div
+                  className={`w-1 bg-border hover:bg-primary cursor-col-resize flex-shrink-0 transition-colors ${
+                    isResizing ? 'bg-primary' : ''
+                  }`}
+                  onMouseDown={handleMouseDown}
+                  style={{ cursor: 'col-resize' }}
+                >
+                  <div className="w-full h-full flex items-center justify-center">
+                    <div className="w-0.5 h-8 bg-gray-400 rounded"></div>
                   </div>
                 </div>
                 
@@ -778,9 +809,187 @@ export function DentistDashboard({ dentistData, isLoading = false, error }: Dent
                             </Card>
                           </div>
                         )}
+
+                        {/* Prescriptions Tab */}
+                        {activePatientTab === "prescriptions" && selectedPatient && (
+                          <div className="space-y-6">
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <h3 className="text-xl font-semibold text-foreground">Prescriptions</h3>
+                                <p className="text-muted-foreground">Manage prescriptions for {selectedPatient.name}</p>
+                              </div>
+                            </div>
+                            <PrescriptionManager
+                              patientId={selectedPatient.id}
+                              patientName={selectedPatient.name}
+                              onSave={(prescription) => {
+                                patientStore.savePrescription(selectedPatient.id, prescription)
+                                console.log("Prescription saved:", prescription)
+                              }}
+                            />
+                            
+                            {/* Previous Prescriptions */}
+                            <Card>
+                              <CardHeader>
+                                <CardTitle>Previous Prescriptions</CardTitle>
+                              </CardHeader>
+                              <CardContent>
+                                {patientStore.getPrescriptionsByPatientId(selectedPatient.id).length === 0 ? (
+                                  <p className="text-muted-foreground text-center py-8">
+                                    No prescriptions on record
+                                  </p>
+                                ) : (
+                                  <div className="space-y-4">
+                                    {patientStore.getPrescriptionsByPatientId(selectedPatient.id).map((prescription, index) => (
+                                      <Card key={index} className="p-4">
+                                        <div className="flex justify-between items-start mb-2">
+                                          <h4 className="font-medium">Prescription #{prescription.id}</h4>
+                                          <Badge>{prescription.status}</Badge>
+                                        </div>
+                                        <p className="text-sm text-muted-foreground">
+                                          Date: {new Date(prescription.date).toLocaleDateString()}
+                                        </p>
+                                        <p className="text-sm text-muted-foreground">
+                                          Items: {prescription.items?.length || 0}
+                                        </p>
+                                      </Card>
+                                    ))}
+                                  </div>
+                                )}
+                              </CardContent>
+                            </Card>
+                          </div>
+                        )}
+
+                        {/* Follow-ups Tab */}
+                        {activePatientTab === "follow-ups" && selectedPatient && (
+                          <div className="space-y-6">
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <h3 className="text-xl font-semibold text-foreground">Follow-up Care</h3>
+                                <p className="text-muted-foreground">Manage follow-up plans for {selectedPatient.name}</p>
+                              </div>
+                            </div>
+                            <FollowUpManager
+                              patientId={selectedPatient.id}
+                              patientName={selectedPatient.name}
+                              treatmentType="General Care"
+                              onSave={(followUpPlan) => {
+                                patientStore.saveFollowUpPlan(selectedPatient.id, followUpPlan)
+                                console.log("Follow-up plan saved:", followUpPlan)
+                              }}
+                            />
+                            
+                            {/* Previous Follow-up Plans */}
+                            <Card>
+                              <CardHeader>
+                                <CardTitle>Previous Follow-up Plans</CardTitle>
+                              </CardHeader>
+                              <CardContent>
+                                {patientStore.getFollowUpPlansByPatientId(selectedPatient.id).length === 0 ? (
+                                  <p className="text-muted-foreground text-center py-8">
+                                    No follow-up plans on record
+                                  </p>
+                                ) : (
+                                  <div className="space-y-4">
+                                    {patientStore.getFollowUpPlansByPatientId(selectedPatient.id).map((plan, index) => (
+                                      <Card key={index} className="p-4">
+                                        <div className="flex justify-between items-start mb-2">
+                                          <h4 className="font-medium">Follow-up Plan #{plan.id}</h4>
+                                          <Badge>{plan.overallStatus}</Badge>
+                                        </div>
+                                        <p className="text-sm text-muted-foreground">
+                                          Created: {new Date(plan.createdDate).toLocaleDateString()}
+                                        </p>
+                                        <p className="text-sm text-muted-foreground">
+                                          Treatment: {plan.treatmentType}
+                                        </p>
+                                        <p className="text-sm text-muted-foreground">
+                                          Items: {plan.items?.length || 0}
+                                        </p>
+                                      </Card>
+                                    ))}
+                                  </div>
+                                )}
+                              </CardContent>
+                            </Card>
+                          </div>
+                        )}
+
+                        {/* Clinical Notes Tab */}
+                        {activePatientTab === "clinical-notes" && selectedPatient && (
+                          <div className="space-y-6">
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <h3 className="text-xl font-semibold text-foreground">Clinical Notes</h3>
+                                <p className="text-muted-foreground">Consultation history for {selectedPatient.name}</p>
+                              </div>
+                            </div>
+                            
+                            {/* Consultation History */}
+                            <Card>
+                              <CardHeader>
+                                <CardTitle>Consultation History</CardTitle>
+                              </CardHeader>
+                              <CardContent>
+                                {patientStore.getConsultationsByPatientId(selectedPatient.id).length === 0 ? (
+                                  <p className="text-muted-foreground text-center py-8">
+                                    No consultations on record
+                                  </p>
+                                ) : (
+                                  <div className="space-y-4">
+                                    {patientStore.getConsultationsByPatientId(selectedPatient.id).map((consultation, index) => (
+                                      <Card key={index} className="p-4">
+                                        <div className="flex justify-between items-start mb-3">
+                                          <div>
+                                            <h4 className="font-medium">Consultation #{consultation.id}</h4>
+                                            <p className="text-sm text-muted-foreground">
+                                              {new Date(consultation.date).toLocaleDateString()} - {consultation.dentistName}
+                                            </p>
+                                          </div>
+                                          <Badge>{consultation.status}</Badge>
+                                        </div>
+                                        
+                                        {consultation.chiefComplaint && (
+                                          <div className="mb-2">
+                                            <span className="text-sm font-medium">Chief Complaint: </span>
+                                            <span className="text-sm">{consultation.chiefComplaint}</span>
+                                          </div>
+                                        )}
+                                        
+                                        {consultation.diagnosis && consultation.diagnosis.length > 0 && (
+                                          <div className="mb-2">
+                                            <span className="text-sm font-medium">Diagnosis: </span>
+                                            <span className="text-sm">{consultation.diagnosis.join(", ")}</span>
+                                          </div>
+                                        )}
+                                        
+                                        {consultation.prescriptions && consultation.prescriptions.length > 0 && (
+                                          <div className="mb-2">
+                                            <Badge variant="outline" className="mr-2">
+                                              {consultation.prescriptions.length} Prescription(s)
+                                            </Badge>
+                                          </div>
+                                        )}
+                                        
+                                        {consultation.followUpPlan && (
+                                          <div>
+                                            <Badge variant="outline">
+                                              Follow-up Plan Created
+                                            </Badge>
+                                          </div>
+                                        )}
+                                      </Card>
+                                    ))}
+                                  </div>
+                                )}
+                              </CardContent>
+                            </Card>
+                          </div>
+                        )}
                         
                         {/* Other tab content placeholders */}
-                        {activePatientTab !== "dental-chart" && (
+                        {!["dental-chart", "prescriptions", "follow-ups", "clinical-notes"].includes(activePatientTab) && (
                           <div className="flex items-center justify-center h-64">
                             <div className="text-center">
                               <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
@@ -818,8 +1027,11 @@ export function DentistDashboard({ dentistData, isLoading = false, error }: Dent
             {/* Consultation Tab */}
             {activeTab === "consultation" && <ConsultationForm />}
 
+            {/* Appointments Tab */}
+            {activeTab === "appointments" && <AppointmentOrganizer />}
+
             {/* Other tab content placeholders */}
-            {!["todays-view", "patients", "consultation"].includes(activeTab) && (
+            {!["todays-view", "patients", "consultation", "appointments"].includes(activeTab) && (
               <div className="flex items-center justify-center h-full">
                 <div className="text-center">
                   <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">

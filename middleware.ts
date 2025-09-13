@@ -5,7 +5,7 @@ import { cookies } from 'next/headers';
 
 // 1. Specify protected and public routes
 const protectedRoutes = ['/dentist', '/assistant', '/patient'];
-const publicRoutes = ['/login', '/register']; // We assume your main page is /login
+const publicRoutes = ['/sign-in', '/register'];
 
 export default async function middleware(req: NextRequest) {
   const path = req.nextUrl.pathname;
@@ -18,7 +18,7 @@ export default async function middleware(req: NextRequest) {
   // 3. Redirect logic
   if (isProtectedRoute && !session?.user) {
     // Redirect to login if trying to access a protected route without a session
-    return NextResponse.redirect(new URL('/login', req.url));
+    return NextResponse.redirect(new URL('/sign-in', req.url));
   }
 
   return NextResponse.next();

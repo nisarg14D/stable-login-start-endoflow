@@ -1,19 +1,23 @@
 import './globals.css';
 import type { Metadata, Viewport } from 'next';
-import { Manrope } from 'next/font/google';
+import { Inter } from 'next/font/google';
 import { getUser } from '@/lib/db/queries';
 import { SWRConfig } from 'swr';
 
 export const metadata: Metadata = {
-  title: 'ENDOFLOW - Dental Clinic Management',
-  description: 'Advanced dental clinic management system for endodontic practices.'
+  title: 'ENDOFLOW Clinic Portal',
+  description: 'Professional dental clinic management system'
 };
 
 export const viewport: Viewport = {
   maximumScale: 1
 };
 
-const manrope = Manrope({ subsets: ['latin'] });
+const inter = Inter({ 
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-inter'
+});
 
 export default function RootLayout({
   children
@@ -22,7 +26,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={manrope.className}>
+      <body className={inter.className}>
         <SWRConfig
           value={{
             fallback: {

@@ -1,0 +1,27 @@
+{
+  "version": "7",
+  "dialect": "sqlite",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "6",
+      "when": 1757680264897,
+      "tag": "0000_dry_snowbird",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1757681465212,
+      "tag": "0001_green_falcon",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1757800767740,
+      "tag": "0002_dapper_madame_web",
+      "breakpoints": true
+    }
+  ]
+}

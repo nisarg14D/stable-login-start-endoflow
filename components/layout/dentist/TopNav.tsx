@@ -9,7 +9,7 @@ import { cn } from '@/lib/utils';
 import { signOut } from '@/app/(login)/actions'; // We will use this for the logout button
 
 const navLinks = [
-  { href: '/dashboard', label: "Today's View" },
+  { href: '/dentist/dashboard', label: "Today's View" },
   { href: '/patients', label: 'Patients' },
   // Add other main tabs here later
 ];

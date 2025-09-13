@@ -1,46 +1,51 @@
-// in src/app/(login)/login.tsx
 'use client';
 
-import { useActionState } from 'react';
-import { useFormStatus } from 'react-dom';
+import { useState, useTransition } from 'react';
 import { signIn } from './actions';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { LoginForm } from '@/components/ui/login-form';
 
 export function Login() {
-  const [state, formAction] = useActionState(signIn, undefined);
+  const [error, setError] = useState<string | undefined>(undefined);
+  const [isPending, startTransition] = useTransition();
+
+  const handleLogin = async (email: string, password: string) => {
+    startTransition(async () => {
+      setError(undefined);
+      try {
+        // Create FormData to work with our server action
+        const formData = new FormData();
+        formData.append('email', email);
+        formData.append('password', password);
+        
+        // Call our server action
+        const result = await signIn(formData);
+        
+        if (result?.error) {
+          setError(result.error);
+        }
+        // If no error, the redirect in the server action will handle navigation
+      } catch (err) {
+        console.error('Login error:', err);
+        setError('An unexpected error occurred. Please try again.');
+      }
+    });
+  };
+
+  const handleForgotPassword = () => {
+    // TODO: Implement forgot password functionality
+    console.log('Forgot password clicked');
+  };
 
   return (
-    <Card className="mx-auto max-w-sm">
-      <CardHeader>
-        <CardTitle className="text-2xl">Login to ENDOFLOW</CardTitle>
-        <CardDescription>Enter your email below</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <form action={formAction} className="grid gap-4">
-          <div className="grid gap-2">
-            <Label htmlFor="email">Email</Label>
-            <Input id="email" type="email" name="email" required />
-          </div>
-          <div className="grid gap-2">
-            <Label htmlFor="password">Password</Label>
-            <Input id="password" type="password" name="password" required />
-          </div>
-          {state?.error && <p className="text-sm text-destructive">{state.error}</p>}
-          <SubmitButton />
-        </form>
-      </CardContent>
-    </Card>
-  );
-}
-
-function SubmitButton() {
-  const { pending } = useFormStatus();
-  return (
-    <Button type="submit" className="w-full" disabled={pending}>
-      {pending ? 'Signing In...' : 'Sign In'}
-    </Button>
+    <div className="min-h-screen bg-background flex items-center justify-center p-4">
+      <div className="w-full max-w-md">
+        <LoginForm
+          onLogin={handleLogin}
+          isLoading={isPending}
+          error={error}
+          onForgotPassword={handleForgotPassword}
+        />
+      </div>
+    </div>
   );
 }

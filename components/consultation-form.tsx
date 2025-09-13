@@ -195,7 +195,8 @@ export function ConsultationForm() {
         followUpPlan: followUpPlans.length > 0 ? followUpPlans[0] : null,
         notes: "",
         dentistName: "Dr. Sarah Wilson",
-        status: 'draft' as const
+        status: 'draft' as const,
+        date: new Date().toISOString()
       }
 
       const savedConsultation = patientStore.saveConsultation(consultationData)
@@ -257,7 +258,8 @@ export function ConsultationForm() {
         followUpPlan: followUpPlans.length > 0 ? followUpPlans[0] : null,
         notes: "",
         dentistName: "Dr. Sarah Wilson",
-        status: 'completed' as const
+        status: 'completed' as const,
+        date: new Date().toISOString()
       }
 
       const savedConsultation = patientStore.saveConsultation(consultationData)

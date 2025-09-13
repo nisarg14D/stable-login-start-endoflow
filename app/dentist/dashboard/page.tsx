@@ -14,7 +14,7 @@ export default async function DentistDashboardPage() {
 
   // Mock dentist data - replace with real data from your database
   const dentistData = {
-    name: user.name || `Dr. ${user.email?.split('@')[0]}`,
+    name: `Dr. ${user.email?.split('@')[0]}`,
     email: user.email,
     role: 'dentist',
     // Add more dentist-specific data here as needed

@@ -14,7 +14,7 @@ export default async function AssistantDashboardPage() {
 
   // Mock assistant data - replace with real data from your database
   const assistantData = {
-    name: user.name || `Assistant ${user.email?.split('@')[0]}`,
+    name: `Assistant ${user.email?.split('@')[0]}`,
     email: user.email,
     role: 'assistant',
     // Add more assistant-specific data here as needed

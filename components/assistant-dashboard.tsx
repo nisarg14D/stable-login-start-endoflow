@@ -469,9 +469,8 @@ export function AssistantDashboard({ assistantData, isLoading = false, error }: 
                                 {task.task}
                               </p>
                               <Badge 
-                                size="sm" 
                                 variant={task.priority === 'high' ? 'destructive' : task.priority === 'medium' ? 'secondary' : 'outline'}
-                                className="mt-1"
+                                className="mt-1 text-xs"
                               >
                                 {task.priority}
                               </Badge>

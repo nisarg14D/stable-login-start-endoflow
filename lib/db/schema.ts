@@ -1,4 +1,15 @@
 import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core';
+import { pgTable, text as pgText, integer as pgInteger, serial, boolean, timestamp } from 'drizzle-orm/pg-core';
+
+const useSupabase = process.env.NEXT_PUBLIC_USE_SUPABASE === 'true';
+
+// Conditional table creation based on database type
+const createTable = useSupabase ? pgTable : sqliteTable;
+const textField = useSupabase ? pgText : text;
+const integerField = useSupabase ? pgInteger : integer;
+const serialField = useSupabase ? serial : integer;
+const booleanField = useSupabase ? boolean : integer;
+const timestampField = useSupabase ? timestamp : text;
 
 // Core Tables for Authentication
 export const users = sqliteTable('users', {

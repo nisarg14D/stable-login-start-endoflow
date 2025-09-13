@@ -70,7 +70,7 @@ export async function getPatientMessages(patientId: string): Promise<PatientMess
       .orderBy(desc(messages.sent_at))
       .limit(50);
 
-    return result.map((msg) => ({
+    return result.map((msg: any) => ({
       id: msg.id,
       sender: msg.sender || 'Unknown',
       message_text: msg.message_text || '',
@@ -104,7 +104,7 @@ export async function getPatientRecentActivity(patientId: string): Promise<Recen
       .orderBy(desc(messages.sent_at))
       .limit(5);
 
-    recentMessages.forEach((msg) => {
+    recentMessages.forEach((msg: any) => {
       activities.push({
         id: `msg-${msg.id}`,
         type: 'message',
@@ -178,7 +178,7 @@ export async function getPatientAppointments(patientId: string): Promise<{
     const upcoming: PatientAppointment[] = [];
     const past: PatientAppointment[] = [];
 
-    allAppointments.forEach((apt) => {
+    allAppointments.forEach((apt: any) => {
       const appointmentData = {
         id: apt.id,
         date: new Date(apt.date),
@@ -229,7 +229,7 @@ export async function getPatientConsultations(patientId: string): Promise<Patien
 
     // For each consultation, get associated treatments
     const consultationsWithTreatments = await Promise.all(
-      consultationsData.map(async (consultation) => {
+      consultationsData.map(async (consultation: any) => {
         const treatmentData = await db
           .select({
             id: treatments.id,
@@ -251,7 +251,7 @@ export async function getPatientConsultations(patientId: string): Promise<Patien
           clinical_notes: consultation.clinical_notes,
           diagnosis: consultation.diagnosis,
           treatment_plan: consultation.treatment_plan,
-          treatments: treatmentData.map(t => ({
+          treatments: treatmentData.map((t: any) => ({
             id: t.id,
             tooth_number: t.tooth_number,
             treatment_type: t.treatment_type,
@@ -310,7 +310,7 @@ export async function getPatientDocuments(patientId: string): Promise<PatientDoc
       .where(eq(documents.patient_id, patientId))
       .orderBy(desc(documents.created_at));
 
-    return documentsData.map(doc => ({
+    return documentsData.map((doc: any) => ({
       id: doc.id,
       file_name: doc.file_name,
       file_type: doc.file_type,
